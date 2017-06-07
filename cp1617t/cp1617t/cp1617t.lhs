@@ -713,9 +713,9 @@ outras funções auxiliares que sejam necessárias.
 \begin{code}
 inv x = p2 . (for (split (((1-x)*) . p1) (add . (((1-x)*) >< id ))) (1,1))
 
-prop_invTeste = forAll(Test.QuickCheck.choose(1,2)) $ \s -> let x = inv s 10000
-                                                                y = div 1 s
-                                                            in (mod x y) < 1
+prop_invTeste e = forAll(Test.QuickCheck.choose(1,2)) $ \s -> let x = inv s 10000
+                                                                  y = 1 / s
+                                                              in (mod x y) <= e
 \end{code}
 
 \subsection*{Problema 2}
