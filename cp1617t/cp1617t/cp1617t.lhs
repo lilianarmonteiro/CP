@@ -711,11 +711,12 @@ outras funções auxiliares que sejam necessárias.
 \subsection*{Problema 1}
 
 \begin{code}
-inv x = p2 . (for (split (((1-x)*) . p1) ((uncurry (+)) . (((1-x)*) >< id ))) (1,1))
+inv x = p2.(for (split (((1-x)*).p1) ((uncurry (+)).(((1-x)*) >< id ))) (1,1))
 
-prop_invTeste e = forAll(Test.QuickCheck.choose(1,2)) $ \s -> let x = inv s 10000
-                                                                  y = 1 / s
-                                                              in (mod x y) <= e
+prop_invTeste :: Double -> Double -> Property
+prop_invTeste e s = (s > 1 && s < 2) ==> let x = inv s 100000
+                                             y = 1 / s
+                                         in (abs (x-y)) <= e
 \end{code}
 
 \subsection*{Problema 2}
@@ -727,7 +728,7 @@ sep c = if (c == ' ' || c == '\n' || c == '\t') then True
 wc_w_final :: [Char] -> Int
 wc_w_final = wrapper . worker
 wrapper = p2
-worker = undefined
+worker = cataList(either (const(True,0)) (split (sep.p1) (cond (True) (succ.p2.p2) (p2.p2))))
 \end{code}
 
 \subsection*{Problema 3}
