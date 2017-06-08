@@ -711,7 +711,7 @@ outras funções auxiliares que sejam necessárias.
 \subsection*{Problema 1}
 
 \begin{code}
-inv x = p2 . (for (split (((1-x)*) . p1) (add . (((1-x)*) >< id ))) (1,1))
+inv x = p2 . (for (split (((1-x)*) . p1) ((uncurry (+)) . (((1-x)*) >< id ))) (1,1))
 
 prop_invTeste e = forAll(Test.QuickCheck.choose(1,2)) $ \s -> let x = inv s 10000
                                                                   y = 1 / s
@@ -720,9 +720,13 @@ prop_invTeste e = forAll(Test.QuickCheck.choose(1,2)) $ \s -> let x = inv s 1000
 
 \subsection*{Problema 2}
 \begin{code}
+sep :: Char -> Bool
+sep c = if (c == ' ' || c == '\n' || c == '\t') then True 
+        else False
+
 wc_w_final :: [Char] -> Int
 wc_w_final = wrapper . worker
-wrapper = undefined
+wrapper = p2
 worker = undefined
 \end{code}
 
