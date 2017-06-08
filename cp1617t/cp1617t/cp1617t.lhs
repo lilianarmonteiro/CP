@@ -713,10 +713,7 @@ outras funções auxiliares que sejam necessárias.
 \begin{code}
 inv x = p2.(for (split (((1-x)*).p1) ((uncurry (+)).(((1-x)*) >< id ))) (1,1))
 
-prop_invTeste :: Double -> Double -> Property
-prop_invTeste e s = (s > 1 && s < 2) ==> let x = inv s 100000
-                                             y = 1 / s
-                                         in (abs (x-y)) <= e
+
 \end{code}
 
 \subsection*{Problema 2}
@@ -728,7 +725,9 @@ sep c = if (c == ' ' || c == '\n' || c == '\t') then True
 wc_w_final :: [Char] -> Int
 wc_w_final = wrapper . worker
 wrapper = p2
-worker = cataList(either (const(True,0)) (split (sep.p1) (cond (True) (succ.p2.p2) (p2.p2))))
+worker = cataList(either (const(True,0)) (split (sep.p1) (cond ((uncurry (&&)).((not.sep)><p1)) (succ.p2.p2) (p2.p2))))
+ 
+
 \end{code}
 
 \subsection*{Problema 3}
@@ -794,10 +793,37 @@ eliminatoria = undefined
 % Hide here code that is not relevant to the essence of the problems given
 \def\hiddencode{
 \begin{code}
+
 type Null   = ()
 type Prod a b = (a,b)
 fork = Cp.split
 envia = unsafePerformIO
+---------------------PERGUNTA 1-----------------------------
+inv_teste :: Double -> Double -> Property
+inv_teste e s = (s > 1 && s < 2) ==> let x = inv s 100000
+                                         y = 1 / s
+                                     in (abs (x-y)) <= e
+
+
+--------------------PERGUNTA 2------------------------------
+genSafeChar :: Gen Char
+genSafeChar = elements (['a'..'z'] ++ " \n\t")
+
+genSafeString :: Gen String
+genSafeString = listOf genSafeChar
+
+newtype SafeString = SafeString { unwrapSafeString :: String }
+    deriving Show
+
+instance Arbitrary SafeString where
+    arbitrary = SafeString <$> genSafeString
+
+w :: [Char] -> Int
+w = length . words
+
+prop_wcTest = 
+    forAll genSafeString $ \str -> (wc_w_final str) == (w str)
+
 \end{code}
 }
 
