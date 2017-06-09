@@ -719,8 +719,7 @@ inv x = p2.(for (split (((1-x)*).p1) ((uncurry (+)).(((1-x)*) >< id ))) (1,1))
 \subsection*{Problema 2}
 \begin{code}
 sep :: Char -> Bool
-sep c = if (c == ' ' || c == '\n' || c == '\t') then True 
-        else False
+sep c = (c == ' ' || c == '\n' || c == '\t') 
 
 wc_w_final :: [Char] -> Int
 wc_w_final = wrapper . worker
@@ -733,19 +732,22 @@ worker = cataList(either (const(True,0)) (split (sep.p1) (cond ((uncurry (&&)).(
 \subsection*{Problema 3}
 
 \begin{code}
-inB_tree = undefined
-outB_tree = undefined
 
-recB_tree f = undefined
-baseB_tree g f = undefined
-cataB_tree g = undefined
-anaB_tree g = undefined
-hyloB_tree f g = undefined
+inB_tree = either (const Nil) (uncurry Block)
+
+outB_tree Nil = Left()
+outB_tree (Block a b) = Right(a,b) 
+
+recB_tree f = baseB_tree id f
+baseB_tree g f = id -|- (f >< map(g >< f))
+cataB_tree g = g . (recB_tree(cataB_tree g)) . outB_tree
+--anaB_tree g = inB_tree . (recB_tree(anaB_tree)) . g
+--hyloB_tree f g = cataB_tree . anaB_tree
 
 instance Functor B_tree
-         where fmap f = undefined
+         where fmap f = cataB_tree ( inB_tree . baseB_tree f id)
 
-inordB_tree = undefined
+inordB_tree = cataB_tree(either nil (conc.(concat >< (map cons))))
 
 largestBlock = undefined
 
@@ -798,12 +800,19 @@ type Null   = ()
 type Prod a b = (a,b)
 fork = Cp.split
 envia = unsafePerformIO
+
 ---------------------PERGUNTA 1-----------------------------
-inv_teste :: Double -> Double -> Property
+--inv_teste :: Double -> Double -> Property
 inv_teste e s = (s > 1 && s < 2) ==> let x = inv s 100000
                                          y = 1 / s
                                      in (abs (x-y)) <= e
 
+--inv_teste = forAll(Test.QuickCheck.choose(1,2)) $ \s ->
+--            let x = inv s 100000
+--                y = 1/s
+--                x1 = ((fromInteger $ round $ x * (10^10)) / (10.0^^10.0))
+--                y1 = ((fromInteger $ round $ y * (10^10)) / (10.0^^10.0))
+--            in x1 == y1
 
 --------------------PERGUNTA 2------------------------------
 genSafeChar :: Gen Char
