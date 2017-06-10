@@ -741,17 +741,17 @@ outB_tree (Block a b) = Right(a,b)
 recB_tree f = baseB_tree id f
 baseB_tree g f = id -|- (f >< map(g >< f))
 cataB_tree g = g . (recB_tree(cataB_tree g)) . outB_tree
---anaB_tree g = inB_tree . (recB_tree(anaB_tree)) . g
---hyloB_tree f g = cataB_tree . anaB_tree
+anaB_tree g = inB_tree . (recB_tree(anaB_tree g)) . g
+hyloB_tree f g = cataB_tree . anaB_tree
 
 instance Functor B_tree
          where fmap f = cataB_tree ( inB_tree . baseB_tree f id)
 
-inordB_tree = cataB_tree(either nil (conc.(concat >< (map cons))))
+inordB_tree = cataB_tree(either nil (conc . (id >< (concat . (map cons)))))
 
-largestBlock = undefined
+largestBlock = cataB_tree(either (const 0) ((uncurry max) . (id >< ((uncurry max) . ((split length maximum) . (map p2))))))
 
-mirrorB_tree = undefined
+mirrorB_tree = anaB_tree((id -|- ((split (head.p2) ((uncurry zip).(id >< tail))) . (split (reverse.p1.p2) (reverse.concat.(id >< p2))) .             (id >< unzip))) . outB_tree)
 
 lsplitB_tree = undefined
 
@@ -802,7 +802,7 @@ fork = Cp.split
 envia = unsafePerformIO
 
 ---------------------PERGUNTA 1-----------------------------
---inv_teste :: Double -> Double -> Property
+inv_teste :: Double -> Double -> Property
 inv_teste e s = (s > 1 && s < 2) ==> let x = inv s 100000
                                          y = 1 / s
                                      in (abs (x-y)) <= e
