@@ -785,7 +785,7 @@ qSortB_tree :: Ord a => [a] -> [a]
 qSortB_tree = inordB_tree . (anaB_tree lsplitB_tree)
 
 dotB_tree :: Show a => B_tree a -> IO ExitCode
-dotB_tree = dotpict . bmap nothing (Just . show) . cB_tree2Exp
+dotB_tree = dotpict . bmap nothing (Just . init . concat . map(++"|") . (map show)) . cB_tree2Exp
 
 cB_tree2Exp = cataB_tree (either (const (Var "nil")) h)
              where h = uncurry(Term).(split (p1.p2) (cons.(id><p2))).(id><unzip)
