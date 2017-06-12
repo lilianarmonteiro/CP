@@ -713,6 +713,12 @@ outras funções auxiliares que sejam necessárias.
 \begin{code}
 inv x = p2.(for (split (((1-x)*).p1) ((uncurry (+)).(((1-x)*) >< id ))) (1,1))
 
+---------------------QUICKCHECK PERGUNTA 1-----------------------------
+
+inv_teste :: Double -> Double -> Property
+inv_teste e s = (s > 1 && s < 2) ==> let x = inv s 100000
+                                         y = 1 / s
+                                     in (abs (x-y)) <= e
 
 \end{code}
 
@@ -724,8 +730,26 @@ sep c = (c == ' ' || c == '\n' || c == '\t')
 wc_w_final :: [Char] -> Int
 wc_w_final = wrapper . worker
 wrapper = p2
-worker = cataList(either (const(True,0)) (split (sep.p1) (cond ((uncurry (&&)).((not.sep)><p1)) (succ.p2.p2) (p2.p2))))
- 
+worker = cataList (either (const(True,0)) (split (sep.p1) (cond ((uncurry (&&)).((not.sep)><p1)) (succ.p2.p2) (p2.p2))))
+
+--------------------QUICKCHECK PERGUNTA 2------------------------------
+
+genSafeChar :: Gen Char
+genSafeChar = elements (['a'..'z'] ++ " \n\t")
+
+genSafeString :: Gen String
+genSafeString = listOf genSafeChar
+
+newtype SafeString = SafeString { unwrapSafeString :: String }
+    deriving Show
+
+instance Arbitrary SafeString where
+    arbitrary = SafeString <$> genSafeString
+
+w :: [Char] -> Int
+w = length . words
+
+wc_teste = forAll genSafeString $ \str -> (wc_w_final str) == (w str) 
 
 \end{code}
 
@@ -747,41 +771,56 @@ hyloB_tree f g = cataB_tree . anaB_tree
 instance Functor B_tree
          where fmap f = cataB_tree ( inB_tree . baseB_tree f id)
 
-inordB_tree = cataB_tree(either nil (conc . (id >< (concat . (map cons)))))
+inordB_tree = cataB_tree (either nil (conc . (id >< (concat . (map cons)))))
 
-largestBlock = cataB_tree(either (const 0) ((uncurry max) . (id >< ((uncurry max) . ((split length maximum) . (map p2))))))
+largestBlock = cataB_tree (either (const 0) ((uncurry max) . (id >< ((uncurry max) . ((split length maximum) . (map p2))))))
 
-mirrorB_tree = anaB_tree((id -|- ((split (head.p2) ((uncurry zip).(id >< tail))) . (split (reverse.p1.p2) (reverse.concat.(id >< p2))) .             (id >< unzip))) . outB_tree)
+mirrorB_tree = anaB_tree ((id -|- ((split (head.p2) ((uncurry zip).(id >< tail))) . (split (reverse.p1.p2) (reverse.cons.(id >< p2))) .             (id >< unzip))) . outB_tree)
 
-lsplitB_tree = undefined
+lsplitB_tree [] = Left ()
+lsplitB_tree (h:t) = let (l1,l2) = part (<h) t
+                    in Right(l1, [(h,l2)])
 
-qSortB_tree = undefined
+qSortB_tree :: Ord a => [a] -> [a]
+qSortB_tree = inordB_tree . (anaB_tree lsplitB_tree)
 
-dotB_tree = undefined
+dotB_tree :: Show a => B_tree a -> IO ExitCode
+dotB_tree = dotpict . bmap nothing (Just . show) . cB_tree2Exp
 
-cB_tree2Exp = undefined
+cB_tree2Exp = cataB_tree (either (const (Var "nil")) h)
+             where h = uncurry(Term).(split (p1.p2) (cons.(id><p2))).(id><unzip)
+
+
 \end{code}
 
 \subsection*{Problema 4}
 
 \begin{code}
-anaA = undefined
+anaA ga gb = inA . (id -|- ((anaA ga gb) >< (anaB ga gb))) . ga
 
-anaB = undefined
+anaB ga gb= inB . (id -|- (anaA ga gb)) . gb
 \end{code}
 
 \begin{code}
-generateAlgae = undefined 
+generateAlgae = anaA ((id -|- (split id id)) . outNat) outNat
 
-showAlgae = undefined
+showAlgae = cataA (either (const "A") conc) (either (const "B") id)
+
+--------------------QUICKCHECK PERGUNTA 4------------------------------
+
+algae_teste x = ( x >= 0 && x <= 25) ==> ((toInteger . length . showAlgae . generateAlgae) x) == ((fib . succ . toInteger) x)
+
 \end{code}
 
 \subsection*{Problema 5}
 
 \begin{code}
-permuta = undefined
 
-eliminatoria = undefined
+permuta [] = return []
+permuta l = do { (h,t) <- getR l; cauda <- permuta t; return (h:cauda)}
+
+eliminatoria (Leaf a) = return a
+eliminatoria (Fork (e,d)) = do{ x <- eliminatoria e; y <- eliminatoria d; jogo(x,y)}
 \end{code}
 
 %----------------- Fim do anexo cpm soluções propostas ------------------------%
@@ -801,40 +840,8 @@ type Prod a b = (a,b)
 fork = Cp.split
 envia = unsafePerformIO
 
----------------------PERGUNTA 1-----------------------------
-inv_teste :: Double -> Double -> Property
-inv_teste e s = (s > 1 && s < 2) ==> let x = inv s 100000
-                                         y = 1 / s
-                                     in (abs (x-y)) <= e
-
---inv_teste = forAll(Test.QuickCheck.choose(1,2)) $ \s ->
---            let x = inv s 100000
---                y = 1/s
---                x1 = ((fromInteger $ round $ x * (10^10)) / (10.0^^10.0))
---                y1 = ((fromInteger $ round $ y * (10^10)) / (10.0^^10.0))
---            in x1 == y1
-
---------------------PERGUNTA 2------------------------------
-genSafeChar :: Gen Char
-genSafeChar = elements (['a'..'z'] ++ " \n\t")
-
-genSafeString :: Gen String
-genSafeString = listOf genSafeChar
-
-newtype SafeString = SafeString { unwrapSafeString :: String }
-    deriving Show
-
-instance Arbitrary SafeString where
-    arbitrary = SafeString <$> genSafeString
-
-w :: [Char] -> Int
-w = length . words
-
-prop_wcTest = 
-    forAll genSafeString $ \str -> (wc_w_final str) == (w str)
-
 \end{code}
 }
 
 \end{document}
-
+r
